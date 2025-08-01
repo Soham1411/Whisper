@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Temp Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+    #chatPage, #usernamePage { display: none; }
+    #messages { height: 300px; border: 1px solid #ddd; padding: 10px; overflow-y: scroll; margin-bottom: 10px; }
+    .user-list { border-left: 1px solid #ddd; padding: 10px; }
+  </style>
+</head>
+<body>
+  <!-- Code Page -->
+  <div id="codePage">
+    <h1>Create or Join Chat</h1>
+    <button id="createCode">Create New Chat</button>
+    <div id="codeDisplay" style="display: none; margin: 20px 0;">
+      <p>Share this code with your friend:</p>
+      <h2 id="generatedCode"></h2>
+    </div>
+    <hr>
+    <p>Or enter a code to join:</p>
+    <input type="text" id="joinCode" placeholder="6-digit code">
+    <button id="joinChat">Join Chat</button>
+  </div>
+
+  <!-- Username Page -->
+  <div id="usernamePage">
+    <h2>Enter Your Username</h2>
+    <input type="text" id="usernameInput" placeholder="Your name">
+    <button id="submitUsername">Join Chat</button>
+  </div>
+
+  <!-- Chat Page -->
+  <div id="chatPage">
+    <h2>Chat Room: <span id="currentCode"></span></h2>
+    <div style="display: flex;">
+      <div id="messages" style="flex: 3;"></div>
+      <div class="user-list" style="flex: 1;">
+        <h3>Online Users</h3>
+        <ul id="users"></ul>
+      </div>
+    </div>
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button id="sendMessage">Send</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // DOM elements
+    const codePage = document.getElementById("codePage");
+    const usernamePage = document.getElementById("usernamePage");
+    const chatPage = document.getElementById("chatPage");
+    const createCodeBtn = document.getElementById("createCode");
+    const codeDisplay = document.getElementById("codeDisplay");
+    const generatedCode = document.getElementById("generatedCode");
+    const joinCodeInput = document.getElementById("joinCode");
+    const joinChatBtn = document.getElementById("joinChat");
+    const usernameInput = document.getElementById("usernameInput");
+    const submitUsernameBtn = document.getElementById("submitUsername");
+    const currentCodeDisplay = document.getElementById("currentCode");
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendMessageBtn = document.getElementById("sendMessage");
+    const usersList = document.getElementById("users");
+
+    let chatCode = null;
+    let username = null;
+
+    // Generate a random 6-digit code
+    function generateCode() {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    // Create a new chat
+    createCodeBtn.addEventListener("click", () => {
+      chatCode = generateCode();
+      generatedCode.textContent = chatCode;
+      codeDisplay.style.display = "block";
+      proceedToUsername();
+    });
+
+    // Join an existing chat
+    joinChatBtn.addEventListener("click", () => {
+      const code = joinCodeInput.value.trim();
+      if (code.length === 6 && /^\d+$/.test(code)) {
+        chatCode = code;
+        proceedToUsername();
+      } else {
+        alert("Please enter a valid 6-digit code");
+      }
+    });
+
+    // Proceed to username entry
+    function proceedToUsername() {
+      codePage.style.display = "none";
+      usernamePage.style.display = "block";
+      usernameInput.focus();
+    }
+
+    // Handle username submission
+    submitUsernameBtn.addEventListener("click", () => {
+      username = usernameInput.value.trim() || `User${Math.floor(Math.random() * 1000)}`;
+      usernamePage.style.display = "none";
+      startChat();
+    });
+
+    // Start the chat
+    function startChat() {
+      chatPage.style.display = "block";
+      currentCodeDisplay.textContent = chatCode;
+
+      // Join the Socket.io room with username
+      socket.emit("join", chatCode, username);
+
+      // Listen for messages
+      socket.on("message", (msg) => {
+        const messageElement = document.createElement("div");
+        messageElement.textContent = msg;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+
+      // User join/leave notifications
+      socket.on("userJoined", (name) => {
+        if (name !== username) {
+          displaySystemMessage(`${name} joined the chat`);
+        }
+      });
+
+      socket.on("userLeft", (name) => {
+        displaySystemMessage(`${name} left the chat`);
+      });
+
+      // Update user list
+      socket.on("userList", (users) => {
+        usersList.innerHTML = users.map(user => 
+          `<li>${user}${user === username ? ' (You)' : ''}</li>`
+        ).join("");
+      });
+
+      // Load chat history
+      socket.on("history", (history) => {
+        messagesDiv.innerHTML = "";
+        history.forEach((msg) => {
+          const messageElement = document.createElement("div");
+          messageElement.textContent = msg;
+          messagesDiv.appendChild(messageElement);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+
+      messageInput.focus();
+    }
+
+    // Send a message
+    function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message) {
+        socket.emit("message", chatCode, message);
+        messageInput.value = "";
+      }
+    }
+
+    // Display system messages
+    function displaySystemMessage(msg) {
+      const msgElement = document.createElement("div");
+      msgElement.style.color = "#666";
+      msgElement.style.fontStyle = "italic";
+      msgElement.textContent = msg;
+      messagesDiv.appendChild(msgElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    sendMessageBtn.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
