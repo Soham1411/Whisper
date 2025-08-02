@@ -22,6 +22,7 @@
       display: flex;
       flex-direction: column;
       transition: background-color 0.3s, color 0.3s;
+      overflow: hidden; /* Prevent body scrolling */
     }
     
     /* Dark Mode Styles */
@@ -203,7 +204,8 @@
       background: #f9fafb;
       border-radius: 6px;
       margin-bottom: 15px;
-      min-height: 200px;
+      min-height: 330px;
+      max-height: 60vh; /* Limit height and enable scrolling */
       transition: background-color 0.3s;
     }
     
@@ -240,6 +242,7 @@
       overflow-y: auto;
       flex: 1;
       min-height: 0;
+      max-height: 78vh; /* Limit height and enable scrolling */
     }
     
     .user-list h3 {
@@ -304,6 +307,7 @@
       gap: 15px;
       min-height: 0;
       padding: 20px;
+      overflow: hidden; /* Prevent container scrolling */
     }
     
     .chat-main {
@@ -311,6 +315,7 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
+      overflow: hidden; /* Prevent container scrolling */
     }
     
     .messages-container {
@@ -318,6 +323,7 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
+      overflow: hidden; /* Only messages will scroll */
     }
     
     /* Emoji Picker Styles */
@@ -363,6 +369,10 @@
       .user-list {
         order: -1;
         max-height: 150px;
+      }
+
+      #messages {
+        max-height: 50vh; /* Adjust for mobile */
       }
     }
   </style>
