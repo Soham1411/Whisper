@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -9,7 +10,7 @@ const io = socketIo(server);
 // Store active chats { code: { messages: [], users: Set } }
 const activeChats = new Map();
 
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, 'public')));
 
 io.on("connection", (socket) => {
   console.log("New user connected");
@@ -95,7 +96,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
