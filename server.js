@@ -91,7 +91,7 @@ io.on("connection", (socket) => {
           activeChats.delete(currentRoom);
           console.log(`Room ${currentRoom} deleted (empty)`);
         }
-      }, 30000);
+      }, 60000);
     }
   });
 });
